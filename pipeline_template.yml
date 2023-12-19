@@ -1,0 +1,5 @@
+prefix: jvfe
+skip:
+- github
+- ci
+- nf_core_configs
