@@ -1,6 +1,7 @@
+#!/usr/bin/env Rscript
+
 library(dplyr)
-install.packages("vroom")
-library(vroom)
+library(readr)
 
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -16,12 +17,15 @@ output_name <- args[3]
 
 
 # Read data from files
-sumstats <- vroom(sumstats_file, col_select = c("variant", "beta", "se", "pval", "n_complete_samples"))
-ref <- vroom(variants_file, col_select = c("variant" ,"rsid", "chr", "ref", "alt"))
+sumstats <- read_table(sumstats_file) %>%
+  dplyr::select(variant, beta, se, pval, n_complete_samples)
+
+ref <- read_table(variants_file)  %>%
+  dplyr::select(variant, rsid, chr, ref, alt)
 
 # Perform the join and selection
 ldsc <- sumstats %>%
   inner_join(ref, by = "variant") %>%
   dplyr::select(SNP=rsid, CHR=chr, A1=ref, A2=alt, P=pval, BETA=beta, N=n_complete_samples)
 
-vroom_write(ldsc, output_name)
+write_tsv(ldsc, output_name)

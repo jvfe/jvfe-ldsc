@@ -3,16 +3,6 @@
     PRINT PARAMS SUMMARY
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-
-include { paramsSummaryLog; paramsSummaryMap } from 'plugin/nf-validation'
-
-def logo = NfcoreTemplate.logo(workflow, params.monochrome_logs)
-def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
-def summary_params = paramsSummaryMap(workflow)
-
-// Print parameter summary log to screen
-log.info logo + paramsSummaryLog(workflow) + citation
-
 WorkflowLdsc.initialise(params, log)
 
 /*
@@ -46,9 +36,11 @@ include { INPUT_CHECK } from '../subworkflows/local/input_check'
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { FASTQC                      } from '../modules/nf-core/fastqc/main'
-include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
-include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+include { WGET } from '../modules/local/wget.nf'
+include { GUNZIP } from '../modules/nf-core/gunzip/main.nf'
+include { LDSC_R } from '../modules/local/ldsc_r.nf'
+include { MUNGE } from '../modules/local/munge.nf'
+include { LDSC as LDSC_PROC } from '../modules/local/ldsc.nf'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -67,7 +59,7 @@ workflow LDSC {
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
     //
     INPUT_CHECK (
-        file(params.input)
+        Channel.of(file(params.input))
     )
 
     WGET (
@@ -79,26 +71,30 @@ workflow LDSC {
     )
 
     LDSC_R (
-        GUNZIP.out.gunzip
+        GUNZIP.out.gunzip,
+        file(params.variants)
     )
 
     MUNGE (
         LDSC_R.out.sumstats_ldsc,
-        params.snplist
+        file(params.snplist)
     )
-    // nextflow run jvfe/ldsc \
-    // --input samplesheet.csv \
-    // --snplist blabla.tsv.gz \
+    // nextflow run . \
+    // --fasta subset.csv \
+    // --input subset.csv \
+    // --depression dep.sumstats.gz \
+    // --variants variants.tsv.bgz \
+    // --snplist w_hm3.snplist \
     // --european_ref eur_w_ld_chr/ \
     // --weights 1000G_weights/1000G_Phase3_weights_hm3_no_MHC/ \
-    // --outdir resultados
-    // -profile docker
+    // --outdir resultados \
+    // -profile docker,test
 
-    LDSC (
-        MUNGE.out.trait,
-        params.depression,
-        params.eur_ref,
-        params.weights
+    LDSC_PROC (
+        MUNGE.out.munged_sumstats,
+        file(params.depression),
+        file(params.european_ref),
+        file(params.weights)
     )
 }
 

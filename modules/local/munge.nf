@@ -11,7 +11,7 @@ process MUNGE {
     path(snplist)
 
     output:
-    path "${meta.id}.sumstats.gz", emit: munged_sumstats
+    tuple val(meta), path("${meta.id}.sumstats.gz"), emit: munged_sumstats
 
     when:
     task.ext.when == null || task.ext.when

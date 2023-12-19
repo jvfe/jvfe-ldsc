@@ -10,7 +10,7 @@ process WGET {
     tuple val(meta), val(url)
 
     output:
-    path "${meta.id}.tsv.gz", emit: sumstats_gzipado
+    tuple val(meta), path("${meta.id}.tsv.gz"), emit: sumstats_gzipado
 
     when:
     task.ext.when == null || task.ext.when

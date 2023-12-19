@@ -11,7 +11,7 @@ workflow INPUT_CHECK {
     main:
     samplesheet
         .splitCsv ( header:true, sep:',' )
-        .map { get_sample_info(it) }
+        .map { it -> get_sample_info(it) }
         .set { sumstats }
 
     emit:
@@ -19,15 +19,11 @@ workflow INPUT_CHECK {
 }
 
 def get_sample_info(row) {
+    def meta = [:]
+    meta.id           = row.abbreviation
 
     def array = []
-    if (!file(row.url).exists()) {
-        print("***")
-        print(row.url)
-        print("***")
-        exit 1, "ERROR: Please check input samplesheet -> No URL"
-    }
-    array = [row.abbreviation, row.url]
+    array = [meta, row.url]
 
     return array
 }
