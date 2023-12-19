@@ -1,0 +1,27 @@
+library(dplyr)
+install.packages("vroom")
+library(vroom)
+
+
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) < 2) {
+    stop("Usage: ldsc_sumstats_setup.r <sumstats> <variants> <output_name>", call. = FALSE)
+}
+
+sumstats_file <- args[1]
+
+variants_file <- args[2]
+
+output_name <- args[3]
+
+
+# Read data from files
+sumstats <- vroom(sumstats_file, col_select = c("variant", "beta", "se", "pval", "n_complete_samples"))
+ref <- vroom(variants_file, col_select = c("variant" ,"rsid", "chr", "ref", "alt"))
+
+# Perform the join and selection
+ldsc <- sumstats %>%
+  inner_join(ref, by = "variant") %>%
+  dplyr::select(SNP=rsid, CHR=chr, A1=ref, A2=alt, P=pval, BETA=beta, N=n_complete_samples)
+
+vroom_write(ldsc, output_name)

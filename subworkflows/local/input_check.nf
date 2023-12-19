@@ -12,10 +12,10 @@ workflow INPUT_CHECK {
     samplesheet
         .splitCsv ( header:true, sep:',' )
         .map { get_sample_info(it) }
+        .set { sumstats }
 
     emit:
-    reads                                     // channel: [ val(meta), [ reads ] ]
-    versions = SAMPLESHEET_CHECK.out.versions // channel: [ versions.yml ]
+    sumstats                                     // channel: [ val(meta), [ reads ] ]
 }
 
 def get_sample_info(row) {
@@ -23,11 +23,11 @@ def get_sample_info(row) {
     def array = []
     if (!file(row.url).exists()) {
         print("***")
-        print(rowurl)
+        print(row.url)
         print("***")
         exit 1, "ERROR: Please check input samplesheet -> No URL"
     }
-    array = [ file(row)]
+    array = [row.abbreviation, row.url]
 
     return array
 }

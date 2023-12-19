@@ -69,45 +69,37 @@ workflow LDSC {
     INPUT_CHECK (
         file(params.input)
     )
-    ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
-    // TODO: OPTIONAL, you can use nf-validation plugin to create an input channel from the samplesheet with Channel.fromSamplesheet("input")
-    // See the documentation https://nextflow-io.github.io/nf-validation/samplesheets/fromSamplesheet/
-    // ! There is currently no tooling to help you write a sample sheet schema
 
-    //
-    // MODULE: Run FastQC
-    //
-    FASTQC (
-        INPUT_CHECK.out.reads
-    )
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
-
-    CUSTOM_DUMPSOFTWAREVERSIONS (
-        ch_versions.unique().collectFile(name: 'collated_versions.yml')
+    WGET (
+        INPUT_CHECK.out.sumstats
     )
 
-    //
-    // MODULE: MultiQC
-    //
-    workflow_summary    = WorkflowLdsc.paramsSummaryMultiqc(workflow, summary_params)
-    ch_workflow_summary = Channel.value(workflow_summary)
-
-    methods_description    = WorkflowLdsc.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
-    ch_methods_description = Channel.value(methods_description)
-
-    ch_multiqc_files = Channel.empty()
-    ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
-    ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
-
-    MULTIQC (
-        ch_multiqc_files.collect(),
-        ch_multiqc_config.toList(),
-        ch_multiqc_custom_config.toList(),
-        ch_multiqc_logo.toList()
+    GUNZIP (
+        WGET.out.sumstats_gzipado
     )
-    multiqc_report = MULTIQC.out.report.toList()
+
+    LDSC_R (
+        GUNZIP.out.gunzip
+    )
+
+    MUNGE (
+        LDSC_R.out.sumstats_ldsc,
+        params.snplist
+    )
+    // nextflow run jvfe/ldsc \
+    // --input samplesheet.csv \
+    // --snplist blabla.tsv.gz \
+    // --european_ref eur_w_ld_chr/ \
+    // --weights 1000G_weights/1000G_Phase3_weights_hm3_no_MHC/ \
+    // --outdir resultados
+    // -profile docker
+
+    LDSC (
+        MUNGE.out.trait,
+        params.depression,
+        params.eur_ref,
+        params.weights
+    )
 }
 
 /*
