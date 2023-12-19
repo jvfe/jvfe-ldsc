@@ -21,8 +21,8 @@ process LDSC {
     script:
     """
     ldsc.py --rg $depression,$sumstats_ldsc \\
-        --ref-ld-chr $european_ref \\
-        --w-ld-chr $weights \\
+        --ref-ld-chr $european_ref/ \\
+        --w-ld-chr $weights/ \\
         --out "${meta.id}_dep"
     """
 }
