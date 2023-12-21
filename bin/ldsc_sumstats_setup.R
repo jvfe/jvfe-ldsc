@@ -21,7 +21,7 @@ sumstats <- read_table(sumstats_file) %>%
   dplyr::select(variant, beta, se, pval, n_complete_samples)
 
 ref <- read_table(variants_file)  %>%
-  dplyr::select(variant, rsid, chr, ref, alt)
+  dplyr::select(variant, rsid, chr, ref, alt, info)
 
 # Perform the join and selection
 ldsc <- sumstats %>%
