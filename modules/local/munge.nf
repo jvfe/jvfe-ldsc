@@ -8,7 +8,6 @@ process MUNGE {
 
     input:
     tuple val(meta), path(sumstats_ldsc)
-    path(snplist)
 
     output:
     tuple val(meta), path("${meta.id}.sumstats.gz"), emit: munged_sumstats
@@ -20,7 +19,6 @@ process MUNGE {
     """
     munge_sumstats.py \\
         --sumstats $sumstats_ldsc \\
-        --merge-alleles $snplist \\
         --out "${meta.id}" \\
         --chunksize 500000
     """
