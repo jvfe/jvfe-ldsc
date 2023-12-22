@@ -76,7 +76,8 @@ workflow LDSC {
     )
 
     MUNGE (
-        LDSC_R.out.sumstats_ldsc
+        LDSC_R.out.sumstats_ldsc,
+        file(params.snplist)
     )
     // nextflow run . \
     // --fasta subset.csv \
